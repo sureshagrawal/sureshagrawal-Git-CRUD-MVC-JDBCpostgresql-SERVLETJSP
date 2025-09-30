@@ -1,0 +1,36 @@
+
+pg_dump -U postgres -h localhost -p 5432 -d crud -F p -f crud.sql
+
+
+docker-compose down -v  # deletes previous container and volumes
+docker-compose up --build
+http://localhost:8080/
+
+
+docker-compose down   # delete previous containers (data persists in volume)
+docker-compose up     # starts container again
+http://localhost:8080/
+
+
+docker ps
+
+docker exec -it crud-container bash
+ls -l /usr/local/tomcat/webapps/
+cat /usr/local/tomcat/logs/catalina.out
+
+
+docker exec -it postgresql-container psql -U postgres
+docker exec -it postgresql-container bash
+ls -l /var/lib/postgresql/data
+psql -U postgres -p
+    \c crud;
+    \d;
+    SELECT * FROM student;
+
+env
+exit
+
+
+docker volume ls
+docker volume inspect crud_mvc_jdbcpostgresql_servletjsp_postgresql-data
+

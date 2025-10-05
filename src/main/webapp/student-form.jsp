@@ -17,7 +17,7 @@
 <body>
     <div class="container my-5">
         <h1 class="text-center">MVC CRUD APPLICATION</h1>
-        <h3 class="text-center">Using JSP AND Servlet and Postgresql</h3>
+        <h3 class="text-center">Using JSP AND Servlet and Postgresql of Supabase</h3>
 
         <%
             Student student = (Student) request.getAttribute("student");

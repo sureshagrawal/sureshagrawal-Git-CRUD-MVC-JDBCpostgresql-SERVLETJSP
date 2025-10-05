@@ -1,5 +1,5 @@
 # -------- STAGE 1: Build WAR using Maven --------
-FROM maven:3.8.6-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-21 AS build
 
 # Set working directory inside the container
 WORKDIR /app
@@ -7,7 +7,6 @@ WORKDIR /app
 # Copy the Maven project files
 COPY pom.xml .
 COPY src ./src
-COPY web ./web  # Only if you have a separate 'web' folder — optional
 
 # Build the WAR
 RUN mvn clean package

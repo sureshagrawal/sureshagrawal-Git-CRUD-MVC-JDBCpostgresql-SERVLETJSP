@@ -24,3 +24,6 @@ jobs:
 
       - name: Push Docker image
         run: docker push sureshagrawal/crud-app:latest
+
+      - name: Trigger Render Deploy Hook
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}

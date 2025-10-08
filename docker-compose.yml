@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgresql-db:
+    image: postgres:16
+    container_name: postgresql-container
+    environment:
+      POSTGRES_PASSWORD: mjain
+      POSTGRES_DB: mycrud
+      POSTGRES_USER: sagrawal
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      - ./crud.sql:/docker-entrypoint-initdb.d/crud.sql
+    networks:
+      - app-network
+
+  tomcat-app:
+    build: .
+    container_name: crud-container1
+    ports:
+      - "8080:8080"
+    environment:
+      JDBC_HOST: postgresql-db
+      JDBC_USERNAME: sagrawal
+      JDBC_PORT: 5432
+      JDBC_DB: mycrud
+      JDBC_PASSWORD: mjain
+    depends_on:
+      - postgresql-db
+    networks:
+      - app-network
+
+volumes:
+  postgresql-data:
+
+networks:
+  app-network:
+    driver: bridge

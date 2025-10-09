@@ -1,0 +1,77 @@
+name: Build and Deploy to AWS Elastic Beanstalk (Docker)
+
+on:
+  push:
+    branches:
+      - main  # or your active branch
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # 1️⃣ Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 2️⃣ Build and Push Docker image
+      - name: Build Docker image
+        run: docker build -t sureshagrawal/crud-app:latest .
+
+      - name: Push Docker image
+        run: docker push sureshagrawal/crud-app:latest
+
+      # 3️⃣ Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1  # change to your region
+
+      # 4️⃣ Generate Dockerrun.aws.json file for Elastic Beanstalk
+      - name: Create Dockerrun.aws.json
+        run: |
+          cat > Dockerrun.aws.json <<EOF
+          {
+            "AWSEBDockerrunVersion": 1,
+            "Image": {
+              "Name": "sureshagrawal/crud-app:latest",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": "8080"
+              }
+            ]
+          }
+          EOF
+
+      # 5️⃣ Zip Dockerrun.aws.json (Beanstalk expects a zip source bundle)
+      - name: Zip deployment package
+        run: zip -r deploy.zip Dockerrun.aws.json
+
+      # 6️⃣ Deploy to Elastic Beanstalk
+      - name: Deploy to Elastic Beanstalk
+        run: |
+          aws elasticbeanstalk update-environment \
+            --application-name "crud-app" \
+            --environment-name "CrudApp-env" \
+            --version-label "v-${{ github.run_number }}" \
+            --description "CI/CD deploy from GitHub Actions" \
+            --option-settings file://<(jq -n '[]')
+
+          aws elasticbeanstalk create-application-version \
+            --application-name "crud-app" \
+            --version-label "v-${{ github.run_number }}" \
+            --source-bundle S3Bucket="elasticbeanstalk-ap-south-1-<your-account-id>",S3Key="deploy.zip"
+
+          aws elasticbeanstalk update-environment \
+            --environment-name "CrudApp-env" \
+            --version-label "v-${{ github.run_number }}"

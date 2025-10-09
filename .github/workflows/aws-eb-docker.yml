@@ -68,3 +68,4 @@ jobs:
           environment_name: ${{ secrets.EB_ENV_NAME }}
           version_label: v${{ github.run_number }}
           deployment_package: app.zip
+          existing_bucket_name: elasticbeanstalk-us-east-1-641596505008

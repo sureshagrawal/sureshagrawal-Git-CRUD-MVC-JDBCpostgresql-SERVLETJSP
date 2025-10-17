@@ -49,10 +49,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deployment pipeline completed successfully!'
+            echo 'Deployment pipeline completed successfully!'
         }
         failure {
-            echo '❌ Build or deployment failed. Check console output.'
+            echo 'Build or deployment failed. Check console output.'
         }
     }
 }

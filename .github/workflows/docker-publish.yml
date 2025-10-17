@@ -3,7 +3,8 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - main  # or your active branch
+      - main  # automatic trigger on push to main
+  workflow_dispatch:  # manual trigger via GitHub Actions UI
 
 jobs:
   build-and-push:

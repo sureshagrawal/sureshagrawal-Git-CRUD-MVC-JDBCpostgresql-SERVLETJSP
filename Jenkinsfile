@@ -3,18 +3,20 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "sureshagrawal/crud-app:latest"
-        RENDER_DEPLOY_HOOK = credentials('RENDER_DEPLOY_HOOK')
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
+                echo '📦 Checking out source code from GitHub...'
                 git branch: 'main', url: 'https://github.com/sureshagrawal/sureshagrawal-Git-CRUD-MVC-JDBCpostgresql-SERVLETJSP.git'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
+                echo '🔐 Logging in to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
@@ -23,19 +25,24 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                echo '🐳 Building Docker image...'
                 sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
+                echo '🚀 Pushing Docker image to Docker Hub...'
                 sh 'docker push $DOCKER_IMAGE'
             }
         }
 
         stage('Trigger Render Deploy') {
             steps {
-                sh 'curl -X POST $RENDER_DEPLOY_HOOK'
+                echo '🌍 Triggering Render deploy hook...'
+                withCredentials([string(credentialsId: 'RENDER_DEPLOY_HOOK', variable: 'HOOK')]) {
+                    sh 'curl -X POST $HOOK'
+                }
             }
         }
     }

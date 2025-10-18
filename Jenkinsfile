@@ -2,69 +2,55 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = 'sureshagrawal'
-        DOCKER_PASS = credentials('docker-hub-credentials') // Jenkins secret
-        HTTP_PROXY = ''  // set if needed
-        HTTPS_PROXY = '' // set if needed
+        DOCKERHUB_CRED = 'docker-hub-credentials'      // Docker Hub username + password
+        IMAGE_NAME = 'sureshagrawal/crud-app:latest'   // Docker Hub image name
+        RENDER_API_KEY = credentials('render-api-key') // Render deploy hook
     }
 
     stages {
-        stage('Checkout SCM') {
+        stage('Checkout') {
             steps {
-                echo "📦 Checking out source code from GitHub..."
-                git url: 'https://github.com/sureshagrawal/sureshagrawal-Git-CRUD-MVC-JDBCpostgresql-SERVLETJSP.git',
-                    branch: 'main',
-                    credentialsId: 'github-token'
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                echo "🔐 Logging in to Docker Hub..."
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                    bat "echo %PASS% | docker login -u %USER% --password-stdin"
-                }
-            }
-        }
-
-        stage('Pre-Pull Base Images') {
-            steps {
-                echo "⬇️ Pulling base images to avoid network failures..."
-                bat "docker pull tomcat:11.0.7-jdk21-temurin"
-                bat "docker pull maven:3.9-eclipse-temurin-21"
+                echo "Cloning repository..."
+                git branch: 'main', credentialsId: 'github-token', url: 'https://github.com/sureshagrawal/sureshagrawal-Git-CRUD-MVC-JDBCpostgresql-SERVLETJSP.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Building Docker image..."
-                withEnv(["HTTP_PROXY=${env.HTTP_PROXY}", "HTTPS_PROXY=${env.HTTPS_PROXY}"]) {
-                    bat "docker build -t sureshagrawal/crud-app:latest ."
-                }
+                echo "Building Docker image..."
+                sh "docker build -t ${IMAGE_NAME} ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo "🚀 Pushing Docker image to Docker Hub..."
-                bat "docker push sureshagrawal/crud-app:latest"
+                echo "Logging in and pushing to Docker Hub..."
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CRED}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                        docker push ${IMAGE_NAME}
+                        docker logout
+                    '''
+                }
             }
         }
 
         stage('Trigger Render Deploy') {
             steps {
-                echo "🌐 Triggering Render deployment..."
-                // Add Render deploy API call if needed
+                echo "Triggering Render deployment..."
+                sh '''
+                    curl -X POST -H "Accept: application/json" -H "Authorization: Bearer $RENDER_API_KEY" $RENDER_API_KEY
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build and deployment completed successfully!"
+            echo "✅ Pipeline completed successfully!"
         }
         failure {
-            echo "❌ Build or deployment failed. Check console output."
+            echo "❌ Pipeline failed!"
         }
     }
 }
